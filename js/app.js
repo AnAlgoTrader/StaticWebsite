@@ -79,72 +79,60 @@ function setupTabNavigation() {
 // Header Actions (Sync, Upload, Clear)
 function setupActions() {
     const syncBtn = document.getElementById('syncBtn');
-    syncBtn.addEventListener('click', async () => {
-        if (window.location.hostname.endsWith('github.io')) {
-            setBannerStatus('ℹ️ This dashboard is hosted on GitHub Pages. Trades sync automatically on a schedule via GitHub Actions, or manually via the Actions tab in your GitHub repository.');
-            return;
-        }
-        syncBtn.disabled = true;
-        setConnectionStatus('syncing', 'Syncing IBKR...');
-        setBannerStatus('Syncing Flex report from IBKR... Generating statement may take 15-45 seconds.');
-        try {
-            const res = await API.syncFromIBKR();
-            if (res.notice) {
-                setBannerStatus(res.notice);
-            } else if (res.error) {
-                setBannerStatus(`Error: ${res.error}`);
-            } else {
-                setBannerStatus(`Successfully synced ${res.count} trades from IBKR.`);
-                await loadTrades();
+    if (syncBtn) {
+        syncBtn.addEventListener('click', async () => {
+            syncBtn.disabled = true;
+            setConnectionStatus('syncing', 'Syncing...');
+            try {
+                const res = await API.syncFromIBKR();
+                if (res.notice) {
+                    setBannerStatus(res.notice);
+                } else if (res.error) {
+                    setBannerStatus(`Error: ${res.error}`);
+                } else {
+                    await loadTrades();
+                }
+            } catch (e) {
+                setBannerStatus(`Sync error: ${e.message}`);
+            } finally {
+                syncBtn.disabled = false;
+                await updateStatus();
             }
-        } catch (e) {
-            setBannerStatus(`Sync error: ${e.message}`);
-        } finally {
-            syncBtn.disabled = false;
-            await updateStatus();
-        }
-    });
+        });
+    }
 
     const uploadInput = document.getElementById('uploadInput');
-    uploadInput.addEventListener('change', async (e) => {
-        if (window.location.hostname.endsWith('github.io')) {
-            setBannerStatus('ℹ️ Uploading XML is only available when running the local backend.');
-            e.target.value = '';
-            return;
-        }
-        const file = e.target.files[0];
-        if (!file) return;
-        setBannerStatus(`Uploading ${file.name}...`);
-        try {
-            const res = await API.uploadXML(file);
-            if (res.error) {
-                setBannerStatus(`Upload error: ${res.error}`);
-            } else {
-                setBannerStatus(`Uploaded and parsed ${res.count} trades.`);
-                await loadTrades();
+    if (uploadInput) {
+        uploadInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+                const res = await API.uploadXML(file);
+                if (res.error) {
+                    setBannerStatus(`Upload error: ${res.error}`);
+                } else {
+                    await loadTrades();
+                }
+            } catch (e) {
+                setBannerStatus(`Upload error: ${e.message}`);
             }
-        } catch (e) {
-            setBannerStatus(`Upload error: ${e.message}`);
-        }
-        e.target.value = '';
-    });
+            e.target.value = '';
+        });
+    }
 
     const clearBtn = document.getElementById('clearBtn');
-    clearBtn.addEventListener('click', async () => {
-        if (window.location.hostname.endsWith('github.io')) {
-            setBannerStatus('ℹ️ Clearing trade data is disabled on static GitHub Pages deployment.');
-            return;
-        }
-        if (!confirm('Are you sure you want to clear all locally stored trades?')) return;
-        try {
-            await API.clearData();
-            allTrades = [];
-            renderAll();
-            setBannerStatus('All local trade data cleared.');
-        } catch (e) {
-            setBannerStatus(`Error: ${e.message}`);
-        }
-    });
+    if (clearBtn) {
+        clearBtn.addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to clear all locally stored trades?')) return;
+            try {
+                await API.clearData();
+                allTrades = [];
+                renderAll();
+            } catch (e) {
+                setBannerStatus(`Error: ${e.message}`);
+            }
+        });
+    }
 }
 
 // Dashboard Toolbar (Filters, Mode Toggle)
@@ -258,15 +246,14 @@ async function updateStatus() {
     try {
         const status = await API.getStatus();
         if (status.hasToken || status.staticMode) {
-            let label = status.staticMode ? 'IBKR Cloud Sync' : 'IBKR Connected';
-            let info = label;
+            let info = 'Connected';
             if (status.lastSync) {
                 const date = new Date(status.lastSync);
-                info += ` (Synced ${date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`;
+                info = `Updated ${date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
             }
             setConnectionStatus('connected', info);
         } else {
-            setConnectionStatus('warning', 'Missing Flex Credentials');
+            setConnectionStatus('warning', 'Offline');
         }
     } catch (e) {
         setConnectionStatus('warning', 'Service Offline');
