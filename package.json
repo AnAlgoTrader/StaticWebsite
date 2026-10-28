@@ -1,0 +1,13 @@
+{
+  "name": "ibkr-futures-journal-static",
+  "version": "1.0.0",
+  "description": "Static IBKR Futures Trading Journal for GitHub Pages with automated GitHub Actions sync",
+  "scripts": {
+    "sync": "node scripts/sync.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.7",
+    "dotenv": "^16.4.5",
+    "fast-xml-parser": "^4.5.0"
+  }
+}

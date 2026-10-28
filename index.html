@@ -1,12 +1,690 @@
 <!DOCTYPE html>
-<html lang="">
-  <head>
-    <meta charset="utf-8">
-    <title></title>
-  </head>
-  <body>
-    <header></header>
-    <main>this is static github page</main>
-    <footer></footer>
-  </body>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IBKR Futures Journal</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Top Navigation Bar -->
+        <header class="top-nav">
+            <div class="brand">
+                <div class="brand-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 3v18h18"/>
+                        <path d="m19 9-5 5-4-4-3 3"/>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-title">IBKR Futures Journal</span>
+                    <span class="brand-subtitle">Automated Flex Analytics</span>
+                </div>
+                <div id="connBadge" class="connection-badge checking">
+                    <span class="status-dot"></span>
+                    <span id="connBadgeText">Checking...</span>
+                </div>
+            </div>
+
+            <div class="nav-actions">
+                <button id="syncBtn" class="btn btn-primary" title="Fetch latest Flex report from IBKR">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                        <path d="M3 3v5h5"/>
+                        <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+                        <path d="M16 21h5v-5"/>
+                    </svg>
+                    <span>Sync IBKR</span>
+                </button>
+
+                <label class="btn btn-secondary" title="Manually upload IBKR Flex XML report">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <span>Upload XML</span>
+                    <input type="file" id="uploadInput" accept=".xml,application/xml,text/xml" hidden>
+                </label>
+
+                <button id="clearBtn" class="btn btn-ghost-danger" title="Clear locally stored trades">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Status / Alert Banner -->
+        <div id="statusBar" class="status-banner"></div>
+
+        <!-- Tab Switching Bar -->
+        <div class="tabs-bar">
+            <nav class="tabs-nav">
+                <button class="tab-btn active" data-tab="dashboard">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="7" height="9" x="3" y="3" rx="1"/>
+                        <rect width="7" height="5" x="14" y="3" rx="1"/>
+                        <rect width="7" height="9" x="14" y="12" rx="1"/>
+                        <rect width="7" height="5" x="3" y="16" rx="1"/>
+                    </svg>
+                    <span>Dashboard</span>
+                </button>
+                <button class="tab-btn" data-tab="log">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="8" y1="6" x2="21" y2="6"/>
+                        <line x1="8" y1="12" x2="21" y2="12"/>
+                        <line x1="8" y1="18" x2="21" y2="18"/>
+                        <line x1="3" y1="6" x2="3.01" y2="6"/>
+                        <line x1="3" y1="12" x2="3.01" y2="12"/>
+                        <line x1="3" y1="18" x2="3.01" y2="18"/>
+                    </svg>
+                    <span>Trade Log</span>
+                    <span id="tabTradeCountBadge" class="tab-badge">0</span>
+                </button>
+                <button class="tab-btn" data-tab="daily">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <span>Daily Summary</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- TAB: DASHBOARD -->
+        <main id="tab-dashboard" class="tab-content active">
+            <!-- Filter & Controls Toolbar -->
+            <div class="dashboard-toolbar">
+                <div class="toolbar-left">
+                    <div class="control-group">
+                        <label for="dashSymbolFilter" class="control-label">Symbol</label>
+                        <select id="dashSymbolFilter" class="select-styled">
+                            <option value="ALL">All Instruments</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Timeframe</label>
+                        <div class="pill-group" id="dashDateFilters">
+                            <button class="pill-btn active" data-range="ALL">All Time</button>
+                            <button class="pill-btn" data-range="7D">7D</button>
+                            <button class="pill-btn" data-range="30D">30D</button>
+                            <button class="pill-btn" data-range="90D">90D</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="toolbar-right">
+                    <span id="dashFilterSummary" class="filter-summary-badge">0 trades</span>
+                </div>
+            </div>
+
+            <!-- Top Hero KPI Scorecards -->
+            <div class="hero-scorecards">
+                <!-- 1. Net P&L Card -->
+                <div class="kpi-card pnl-hero-card">
+                    <div class="kpi-card-header">
+                        <span class="kpi-title">Net Cumulative P&L</span>
+                        <span id="dashNetBadge" class="kpi-tag neutral">--</span>
+                    </div>
+                    <div class="kpi-main-val" id="dashNetPnl">$0.00</div>
+                    <div class="kpi-sub-breakdown">
+                        <div class="sub-item">
+                            <span class="sub-label">Gross Profit</span>
+                            <span class="sub-val positive" id="dashGrossProfit">$0.00</span>
+                        </div>
+                        <div class="sub-item">
+                            <span class="sub-label">Gross Loss</span>
+                            <span class="sub-val negative" id="dashGrossLoss">$0.00</span>
+                        </div>
+                        <div class="sub-item">
+                            <span class="sub-label">Commissions</span>
+                            <span class="sub-val" id="dashCommissions">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Win Rate Gauge Card -->
+                <div class="kpi-card gauge-card">
+                    <div class="kpi-card-header">
+                        <span class="kpi-title">Win Rate</span>
+                        <span id="dashWinLossPill" class="kpi-tag neutral">0W / 0L</span>
+                    </div>
+                    <div class="gauge-wrapper">
+                        <svg viewBox="0 0 120 70" class="semicircle-gauge">
+                            <defs>
+                                <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stop-color="#3b82f6"/>
+                                    <stop offset="50%" stop-color="#06b6d4"/>
+                                    <stop offset="100%" stop-color="#10b981"/>
+                                </linearGradient>
+                            </defs>
+                            <!-- Background Track -->
+                            <path d="M 15 65 A 45 45 0 0 1 105 65" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-width="9" stroke-linecap="round"/>
+                            <!-- Active Arc -->
+                            <path id="gaugeActiveArc" d="M 15 65 A 45 45 0 0 1 105 65" fill="none" stroke="url(#gaugeGrad)" stroke-width="9" stroke-linecap="round" stroke-dasharray="141.37" stroke-dashoffset="141.37"/>
+                        </svg>
+                        <div class="gauge-center-text">
+                            <span class="gauge-pct" id="dashWinRate">0%</span>
+                            <span class="gauge-lbl">ACCURACY</span>
+                        </div>
+                    </div>
+                    <div class="gauge-sub-row">
+                        <span class="text-win"><strong id="dashWinners">0</strong> Won</span>
+                        <span class="text-muted">&bull;</span>
+                        <span class="text-loss"><strong id="dashLosers">0</strong> Lost</span>
+                        <span class="text-muted">&bull;</span>
+                        <span class="text-be"><strong id="dashBreakeven">0</strong> BE</span>
+                    </div>
+                </div>
+
+                <!-- 3. Profit Factor & Edge Card -->
+                <div class="kpi-card ratio-card">
+                    <div class="kpi-card-header">
+                        <span class="kpi-title">Profit Factor</span>
+                        <span id="dashPfBadge" class="kpi-tag neutral">Edge: --</span>
+                    </div>
+                    <div class="kpi-main-val" id="dashProfitFactor">0.00</div>
+                    <div class="ratio-bar-container">
+                        <div class="ratio-bar">
+                            <div id="ratioWinBar" class="ratio-bar-win" style="width: 50%;"></div>
+                            <div id="ratioLossBar" class="ratio-bar-loss" style="width: 50%;"></div>
+                        </div>
+                        <div class="ratio-bar-legend">
+                            <span class="positive" id="dashProfitVol">$0</span>
+                            <span class="negative" id="dashLossVol">$0</span>
+                        </div>
+                    </div>
+                    <div class="kpi-footer-metric">
+                        <span class="footer-lbl">Expectancy / Trade</span>
+                        <span class="footer-val" id="dashExpectancy">$0.00</span>
+                    </div>
+                </div>
+
+                <!-- 4. Payoff & Average Win/Loss -->
+                <div class="kpi-card payoff-card">
+                    <div class="kpi-card-header">
+                        <span class="kpi-title">Average Payoff</span>
+                        <span class="kpi-tag neutral" id="dashWLRatio">0.00x W/L</span>
+                    </div>
+                    <div class="split-stats-row">
+                        <div class="split-stat">
+                            <span class="split-label">Avg Win</span>
+                            <span class="split-val positive" id="dashAvgWin">$0.00</span>
+                        </div>
+                        <div class="split-divider"></div>
+                        <div class="split-stat">
+                            <span class="split-label">Avg Loss</span>
+                            <span class="split-val negative" id="dashAvgLoss">$0.00</span>
+                        </div>
+                    </div>
+                    <div class="kpi-sub-breakdown mt-2">
+                        <div class="sub-item">
+                            <span class="sub-label">Largest Win</span>
+                            <span class="sub-val positive" id="dashLargestWin">$0.00</span>
+                        </div>
+                        <div class="sub-item">
+                            <span class="sub-label">Largest Loss</span>
+                            <span class="sub-val negative" id="dashLargestLoss">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. Risk & Consistency Card -->
+                <div class="kpi-card risk-card">
+                    <div class="kpi-card-header">
+                        <span class="kpi-title">Risk & Consistency</span>
+                        <span id="dashStreakBadge" class="kpi-tag neutral">Streak: --</span>
+                    </div>
+                    <div class="split-stats-row">
+                        <div class="split-stat">
+                            <span class="split-label">Max Drawdown</span>
+                            <span class="split-val negative" id="dashMaxDD">$0.00</span>
+                        </div>
+                        <div class="split-divider"></div>
+                        <div class="split-stat">
+                            <span class="split-label">Recovery Factor</span>
+                            <span class="split-val" id="dashRecovery">0.00</span>
+                        </div>
+                    </div>
+                    <div class="kpi-sub-breakdown mt-2">
+                        <div class="sub-item">
+                            <span class="sub-label">Best Win Streak</span>
+                            <span class="sub-val positive" id="dashWinStreak">0</span>
+                        </div>
+                        <div class="sub-item">
+                            <span class="sub-label">Max Loss Streak</span>
+                            <span class="sub-val negative" id="dashLossStreak">0</span>
+                        </div>
+                        <div class="sub-item">
+                            <span class="sub-label">Sharpe Ratio</span>
+                            <span class="sub-val" id="dashSharpe">0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="charts-section">
+                <!-- Large Interactive Equity Curve -->
+                <div class="chart-card full-width">
+                    <div class="chart-header">
+                        <div class="chart-header-left">
+                            <h3 class="chart-title">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+                                    <polyline points="16 7 22 7 22 13"/>
+                                </svg>
+                                Cumulative Net Equity Curve
+                            </h3>
+                            <span class="chart-subtitle">Progression of cumulative net trading profits</span>
+                        </div>
+                        <div class="chart-header-right">
+                            <div class="segmented-control" id="equityModeToggle">
+                                <button class="segment-btn active" data-mode="trade">By Trade</button>
+                                <button class="segment-btn" data-mode="day">By Day</button>
+                            </div>
+                            <span id="equityFinalBadge" class="badge-pill positive">$0.00</span>
+                        </div>
+                    </div>
+                    <div class="chart-canvas-container large">
+                        <canvas id="chartEquity"></canvas>
+                    </div>
+                </div>
+
+                <!-- Daily Performance Bar Chart -->
+                <div class="chart-card full-width">
+                    <div class="chart-header">
+                        <div class="chart-header-left">
+                            <h3 class="chart-title">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect width="18" height="18" x="3" y="3" rx="2"/>
+                                    <path d="M7 17v-4"/>
+                                    <path d="M12 17v-8"/>
+                                    <path d="M17 17v-2"/>
+                                </svg>
+                                Daily Net P&L
+                            </h3>
+                            <span class="chart-subtitle">Profit & loss realized on each individual trading session</span>
+                        </div>
+                        <div class="chart-header-right">
+                            <span id="dashDailyWinRateBadge" class="badge-pill neutral">0 / 0 Days Profitable</span>
+                        </div>
+                    </div>
+                    <div class="chart-canvas-container medium">
+                        <canvas id="chartDailyPnl"></canvas>
+                    </div>
+                </div>
+
+                <!-- 2-Column Analytics Charts Grid -->
+                <div class="charts-grid-2col">
+                    <!-- Day of Week Performance -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div class="chart-header-left">
+                                <h3 class="chart-title">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                                        <line x1="16" y1="2" x2="16" y2="6"/>
+                                        <line x1="8" y1="2" x2="8" y2="6"/>
+                                        <line x1="3" y1="10" x2="21" y2="10"/>
+                                    </svg>
+                                    Performance by Weekday
+                                </h3>
+                                <span class="chart-subtitle">Net edge by day of the week</span>
+                            </div>
+                        </div>
+                        <div class="chart-canvas-container compact">
+                            <canvas id="chartDayOfWeek"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Win / Loss Distribution Donut -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div class="chart-header-left">
+                                <h3 class="chart-title">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
+                                        <path d="M22 12A10 10 0 0 0 12 2v10z"/>
+                                    </svg>
+                                    Trade Outcome Distribution
+                                </h3>
+                                <span class="chart-subtitle">Ratio of winners vs losers</span>
+                            </div>
+                        </div>
+                        <div class="chart-canvas-container compact donut-container">
+                            <canvas id="chartWinLoss"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2-Column Secondary Analytics -->
+                <div class="charts-grid-2col">
+                    <!-- Symbol / Instrument Performance -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div class="chart-header-left">
+                                <h3 class="chart-title">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="m3 3 7 7-3 3 7 7"/>
+                                        <path d="m14 10 7-7"/>
+                                    </svg>
+                                    Performance by Instrument
+                                </h3>
+                                <span class="chart-subtitle">Net P&L across traded contracts</span>
+                            </div>
+                        </div>
+                        <div class="chart-canvas-container compact">
+                            <canvas id="chartSymbolPnl"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Long vs Short Comparison Card -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div class="chart-header-left">
+                                <h3 class="chart-title">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="7 13 12 18 17 13"/>
+                                        <polyline points="7 6 12 11 17 6"/>
+                                    </svg>
+                                    Execution Side Breakdown
+                                </h3>
+                                <span class="chart-subtitle">Long vs Short closing trades comparison</span>
+                            </div>
+                        </div>
+                        <div class="side-breakdown-content">
+                            <!-- Long / BUY -->
+                            <div class="side-card">
+                                <div class="side-card-header">
+                                    <span class="side-badge buy">BUY Exits</span>
+                                    <span class="side-pnl positive" id="sideBuyPnl">$0.00</span>
+                                </div>
+                                <div class="side-details">
+                                    <div class="side-stat">
+                                        <span class="side-stat-lbl">Trades</span>
+                                        <span class="side-stat-val" id="sideBuyCount">0</span>
+                                    </div>
+                                    <div class="side-stat">
+                                        <span class="side-stat-lbl">Win Rate</span>
+                                        <span class="side-stat-val" id="sideBuyWinRate">0%</span>
+                                    </div>
+                                    <div class="side-stat">
+                                        <span class="side-stat-lbl">W / L</span>
+                                        <span class="side-stat-val" id="sideBuyWL">0W / 0L</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Short / SELL -->
+                            <div class="side-card">
+                                <div class="side-card-header">
+                                    <span class="side-badge sell">SELL Exits</span>
+                                    <span class="side-pnl positive" id="sideSellPnl">$0.00</span>
+                                </div>
+                                <div class="side-details">
+                                    <div class="side-stat">
+                                        <span class="side-stat-lbl">Trades</span>
+                                        <span class="side-stat-val" id="sideSellCount">0</span>
+                                    </div>
+                                    <div class="side-stat">
+                                        <span class="side-stat-lbl">Win Rate</span>
+                                        <span class="side-stat-val" id="sideSellWinRate">0%</span>
+                                    </div>
+                                    <div class="side-stat">
+                                        <span class="side-stat-lbl">W / L</span>
+                                        <span class="side-stat-val" id="sideSellWL">0W / 0L</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comprehensive Performance Matrix Grid -->
+            <div class="matrix-section">
+                <div class="matrix-card">
+                    <div class="matrix-card-header">
+                        <h4>Overview & Volume</h4>
+                    </div>
+                    <div class="matrix-list">
+                        <div class="matrix-item">
+                            <span class="m-lbl">Total Trades</span>
+                            <span class="m-val" id="matTotalTrades">0</span>
+                        </div>
+                        <div class="matrix-item">
+                            <span class="m-lbl">Total Contracts</span>
+                            <span class="m-val" id="matTotalContracts">0</span>
+                        </div>
+                        <div class="matrix-item">
+                            <span class="m-lbl">Net P&L</span>
+                            <span class="m-val" id="matNetPnl">$0.00</span>
+                        </div>
+                        <div class="matrix-item">
+                            <span class="m-lbl">Gross Profit</span>
+                            <span class="m-val positive" id="matGrossProfit">$0.00</span>
+                        </div>
+                        <div class="matrix-item">
+                            <span class="m-lbl">Gross Loss</span>
+                            <span class="m-val negative" id="matGrossLoss">$0.00</span>
+                        </div>
+                        <div class="matrix-item">
+                            <span class="m-lbl">Commissions</span>
+                            <span class="m-val" id="matCommissions">$0.00</span>
+                        </div>
+                        <div class="matrix-item">
+                            <span class="m-lbl">Exchange Fees</span>
+                            <span class="m-val" id="matFees">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="matrix-card">
+                    <div class="matrix-card-header">
+                        <h4>Trading Edge</h4>
+                    </div>
+                    <div class="matrix-list">
+                        <div class="matrix-item">
+                            <span class="m-lbl">Win Rate</span>
+                            <span class="m-val" id="matWinRate">0%</span>
+                        </div>
+                        <div class="matrix-item">
+                            <span class="m-lbl">Profit Factor</span>
+                            <span class="m-val" id="matProfitFactor">0.00</span>
+                        </div>
+                        <div class="matrix-item">
+                            <span class="m-lbl">Trade Expectancy</span>
+                            <span class="m-val" id="matExpectancy">$0.00</span>
+                        </div>
+                        <div class="matrix-item">
+                            <span class="m-lbl">Sharpe Ratio</span>
+                            <span class="m-val" id="matSharpe">0.00</span>
+                        </div>
+                        <div class="matrix-item">
+                            <span class="m-lbl">Max Drawdown</span>
+                            <span class="m-val negative" id="matMaxDD">$0.00</span>
+                        </div>
+                        <div class="matrix-item">
+                            <span class="m-lbl">Recovery Factor</span>
+                            <span class="m-val" id="matRecovery">0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="matrix-card">
+                    <div class="matrix-card-header">
+                        <h4>Trade Distribution</h4>
+                    </div>
+                    <div class="matrix-list">
+                        <div class="matrix-item">
+                            <span class="m-lbl">Winning Trades</span>
+                            <span class="m-val positive" id="matWinners">0</span>
+                        </div>
+                        <div class="matrix-item">
+                            <span class="m-lbl">Losing Trades</span>
+                            <span class="m-val negative" id="matLosers">0</span>
+                        </div>
+                        <div class="matrix-item">
+                            <span class="m-lbl">Breakeven</span>
+                            <span class="m-val" id="matBreakeven">0</span>
+                        </div>
+                        <div class="matrix-item">
+                            <span class="m-lbl">Avg Win</span>
+                            <span class="m-val positive" id="matAvgWin">$0.00</span>
+                        </div>
+                        <div class="matrix-item">
+                            <span class="m-lbl">Avg Loss</span>
+                            <span class="m-val negative" id="matAvgLoss">$0.00</span>
+                        </div>
+                        <div class="matrix-item">
+                            <span class="m-lbl">Win/Loss Ratio</span>
+                            <span class="m-val" id="matWLRatio">0.00</span>
+                        </div>
+                        <div class="matrix-item">
+                            <span class="m-lbl">Largest Win</span>
+                            <span class="m-val positive" id="matLargestWin">$0.00</span>
+                        </div>
+                        <div class="matrix-item">
+                            <span class="m-lbl">Largest Loss</span>
+                            <span class="m-val negative" id="matLargestLoss">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="matrix-card">
+                    <div class="matrix-card-header">
+                        <h4>Calendar & Discipline</h4>
+                    </div>
+                    <div class="matrix-list">
+                        <div class="matrix-item">
+                            <span class="m-lbl">Trading Sessions</span>
+                            <span class="m-val" id="matTradingDays">0</span>
+                        </div>
+                        <div class="matrix-item">
+                            <span class="m-lbl">Profitable Sessions</span>
+                            <span class="m-val" id="matProfDays">0</span>
+                        </div>
+                        <div class="matrix-item">
+                            <span class="m-lbl">Session Win Rate</span>
+                            <span class="m-val" id="matProfDaysPct">0%</span>
+                        </div>
+                        <div class="matrix-item">
+                            <span class="m-lbl">Best Session</span>
+                            <span class="m-val positive" id="matBestDay">$0.00</span>
+                        </div>
+                        <div class="matrix-item">
+                            <span class="m-lbl">Worst Session</span>
+                            <span class="m-val negative" id="matWorstDay">$0.00</span>
+                        </div>
+                        <div class="matrix-item">
+                            <span class="m-lbl">Avg Daily P&L</span>
+                            <span class="m-val" id="matAvgDaily">$0.00</span>
+                        </div>
+                        <div class="matrix-item">
+                            <span class="m-lbl">Max Win Streak</span>
+                            <span class="m-val positive" id="matWinStreak">0</span>
+                        </div>
+                        <div class="matrix-item">
+                            <span class="m-lbl">Max Loss Streak</span>
+                            <span class="m-val negative" id="matLossStreak">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- TAB: TRADE LOG -->
+        <section id="tab-log" class="tab-content">
+            <div class="section-card">
+                <div class="table-controls">
+                    <div class="search-input-wrapper">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" id="logSearch" placeholder="Search by symbol, id...">
+                    </div>
+                    <select id="logFilterSide" class="select-styled">
+                        <option value="ALL">All Sides</option>
+                        <option value="BUY">BUY Only</option>
+                        <option value="SELL">SELL Only</option>
+                    </select>
+                </div>
+
+                <div class="table-container">
+                    <table id="tradeLogTable" class="modern-table">
+                        <thead>
+                            <tr>
+                                <th data-sort="tradeDate">Date <span class="sort-icon"></span></th>
+                                <th data-sort="datetime">Time <span class="sort-icon"></span></th>
+                                <th data-sort="symbol">Symbol <span class="sort-icon"></span></th>
+                                <th data-sort="side">Side <span class="sort-icon"></span></th>
+                                <th data-sort="qty" class="text-right">Qty <span class="sort-icon"></span></th>
+                                <th data-sort="price" class="text-right">Price <span class="sort-icon"></span></th>
+                                <th data-sort="commission" class="text-right">Comm <span class="sort-icon"></span></th>
+                                <th data-sort="fees" class="text-right">Fees <span class="sort-icon"></span></th>
+                                <th data-sort="realizedPnL" class="text-right">Realized P&L <span class="sort-icon"></span></th>
+                                <th data-sort="net" class="text-right">Net P&L <span class="sort-icon"></span></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div class="pagination-bar">
+                    <button id="prevPage" class="btn btn-secondary btn-sm">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 18 9 12 15 6"/>
+                        </svg>
+                        Previous
+                    </button>
+                    <span id="pageInfo" class="page-info">Page 1</span>
+                    <button id="nextPage" class="btn btn-secondary btn-sm">
+                        Next
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: DAILY SUMMARY -->
+        <section id="tab-daily" class="tab-content">
+            <div class="section-card">
+                <div class="table-container">
+                    <table id="dailyTable" class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th class="text-right">Trades</th>
+                                <th class="text-right">Commissions</th>
+                                <th class="text-right">Fees</th>
+                                <th class="text-right">Net P&L</th>
+                                <th class="text-center">Win / Loss</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/app.js"></script>
+</body>
 </html>

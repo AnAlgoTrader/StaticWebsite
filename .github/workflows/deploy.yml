@@ -1,0 +1,70 @@
+name: Deploy IBKR Trading Journal to GitHub Pages
+
+on:
+  push:
+    branches: ["main"]
+  schedule:
+    # Runs Monday through Friday at 22:00 UTC (after US equity & futures daily cash close)
+    - cron: '0 22 * * 1-5'
+  workflow_dispatch: # Allows manual run button from the GitHub Actions tab
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch latest trades from IBKR Flex Web Service
+        env:
+          FLEX_TOKEN: ${{ secrets.FLEX_TOKEN }}
+          FLEX_QUERY_ID: ${{ secrets.FLEX_QUERY_ID }}
+          FLEX_VERSION: ${{ secrets.FLEX_VERSION || '3' }}
+        run: |
+          node scripts/sync.js
+
+      - name: Commit updated trades to repository
+        continue-on-error: true
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/trades.json data/status.json
+          if git diff --staged --quiet; then
+            echo "No new trade or status changes to commit."
+          else
+            git commit -m "chore(data): automated IBKR trade sync [skip ci]"
+            git push
+          fi
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
