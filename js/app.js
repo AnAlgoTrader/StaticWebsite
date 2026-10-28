@@ -890,7 +890,7 @@ function renderDailySummary() {
 
     if (daily.length === 0) {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td colspan="6" style="text-align: center; padding: 24px; color: var(--text-muted);">No daily sessions recorded yet.</td>`;
+        tr.innerHTML = `<td colspan="5" style="text-align: center; padding: 24px; color: var(--text-muted);">No daily sessions recorded yet.</td>`;
         tbody.appendChild(tr);
         return;
     }
@@ -902,7 +902,6 @@ function renderDailySummary() {
             <td><strong>${Utils.formatDisplayDate(d.date)}</strong> (${Utils.getDayOfWeek(d.date)})</td>
             <td class="text-right mono">${d.trades}</td>
             <td class="text-right mono">${Utils.formatCurrency(d.commissions)}</td>
-            <td class="text-right mono">${Utils.formatCurrency(d.fees)}</td>
             <td class="text-right mono ${Utils.getPnlClass(d.net)}"><strong>${Utils.formatCurrency(d.net, true)}</strong></td>
             <td class="text-center">${wl}</td>
         `;
