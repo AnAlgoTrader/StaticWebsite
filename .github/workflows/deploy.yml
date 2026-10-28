@@ -4,14 +4,17 @@ on:
   push:
     branches: ["main"]
   schedule:
-    # Runs Monday through Friday at 22:00 UTC (after US equity & futures daily cash close)
-    - cron: '0 22 * * 1-5'
+    # Runs every day at 10:00 AM Europe/Madrid (CET, UTC+1). Use '0 8 * * *' for CEST (UTC+2).
+    - cron: '0 9 * * *'
   workflow_dispatch: # Allows manual run button from the GitHub Actions tab
 
 permissions:
   contents: write
   pages: write
   id-token: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 concurrency:
   group: "pages"
@@ -25,10 +28,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: 'npm'
