@@ -853,7 +853,7 @@ function renderTradeLog() {
 
     if (paged.length === 0) {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td colspan="10" style="text-align: center; padding: 24px; color: var(--text-muted);">No matching trades found.</td>`;
+        tr.innerHTML = `<td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted);">No matching trades found.</td>`;
         tbody.appendChild(tr);
         return;
     }
@@ -871,8 +871,6 @@ function renderTradeLog() {
             <td class="text-right mono">${t.qty || 0}</td>
             <td class="text-right mono">${Utils.formatNumber(t.price, 2)}</td>
             <td class="text-right mono">${Utils.formatCurrency(t.commission || 0)}</td>
-            <td class="text-right mono">${Utils.formatCurrency(t.fees || 0)}</td>
-            <td class="text-right mono ${Utils.getPnlClass(t.realizedPnL)}">${Utils.formatCurrency(t.realizedPnL || 0, true)}</td>
             <td class="text-right mono ${Utils.getPnlClass(net)}"><strong>${Utils.formatCurrency(net, true)}</strong></td>
         `;
         tbody.appendChild(tr);
