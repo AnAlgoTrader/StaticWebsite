@@ -80,24 +80,9 @@ function setupTabNavigation() {
 function setupActions() {
     const syncBtn = document.getElementById('syncBtn');
     if (syncBtn) {
-        syncBtn.addEventListener('click', async () => {
-            syncBtn.disabled = true;
-            setConnectionStatus('syncing', 'Syncing...');
-            try {
-                const res = await API.syncFromIBKR();
-                if (res.notice) {
-                    setBannerStatus(res.notice);
-                } else if (res.error) {
-                    setBannerStatus(`Error: ${res.error}`);
-                } else {
-                    await loadTrades();
-                }
-            } catch (e) {
-                setBannerStatus(`Sync error: ${e.message}`);
-            } finally {
-                syncBtn.disabled = false;
-                await updateStatus();
-            }
+        syncBtn.addEventListener('click', () => {
+            setBannerStatus('Opening GitHub Actions in a new tab. Click "Run workflow" to sync latest trades.');
+            setTimeout(() => setBannerStatus(''), 8000);
         });
     }
 

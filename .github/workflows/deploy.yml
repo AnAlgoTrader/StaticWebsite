@@ -3,10 +3,6 @@ name: Retrieve data from IBKR and update website
 on:
   push:
     branches: ["main"]
-  schedule:
-    # Runs daily at ~10:15 UTC (11:15 AM CET / 12:15 PM CEST)
-    # Using an off-peak minute (:15) prevents top-of-the-hour GitHub Actions runner queue congestion
-    - cron: '15 10 * * *'
   workflow_dispatch: # Allows manual run button from the GitHub Actions tab
 
 permissions:
