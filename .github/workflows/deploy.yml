@@ -1,4 +1,4 @@
-name: Deploy IBKR Trading Journal to GitHub Pages
+name: Retrieve data from IBKR and update website
 
 on:
   push:
